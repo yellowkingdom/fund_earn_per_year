@@ -1,0 +1,194 @@
+<!doctype html>
+<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8" />
+        <title>年华收益计算小工具</title>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="keywords" content="年化收益率,基金收益计算,基金年化收益">
+        <meta name="descript" content="简单计算年化收益率">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+    </head>
+    <body> 
+        <div id="main">
+            <div class="container">
+                <div class="row">
+                    <div class="hgroup">
+                        <h3>年化收益率计算</h3>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="span6 offset1">
+                        <div class="input-group">
+                            <label for="">基金名称</label>
+                            <input class="form-control" placeholder="基金名称" type="text" v-model="fund_name"  >
+                        </div>
+                        <div class="input-group">
+                            <label for="">本金</label>
+                            <input class="form-control" placeholder="本金" type="number" v-model="capital"  >
+                        </div>
+                        <div class="input-group">
+                            <label for="">持仓单价</label>
+                            <input class="form-control" placeholder="持仓单价" type="number" v-model="hold_price"  >
+                        </div>
+                        <div class="input-group">
+                            <label for="">最新净值</label>
+                            <input class="form-control" placeholder="最新净值" type="number" v-model="now_price"  >
+                        </div>
+                        <div class="input-group">
+                            <label for="">持有份额</label>
+                            <input class="form-control" placeholder="持有份额" type="number" v-model="hold_portion"  >
+                        </div>
+                        <div class="input-group">
+                            <label for="">购入时间</label>
+                            <input class="form-control" placeholder="购入时间" type="date" v-model="buy_date"  >
+                        </div>
+                        <div class="input-group">
+                            <label for="">年化收益率</label>
+                            <input class="form-control" placeholder="年化收益率" readonly type="number" v-model="earn_rate"  >
+                            <span class="input-group-addon">%</span>
+                        </div>
+                        <div class="input-group">
+                            <button class="btn btn-primary" @click="add_compare">对比</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="hgroup">
+                        <h3>收益对比</h3>
+                    </div>
+                </div>
+                <div class="row">
+                    <table class="table table-sm table-hover table-striped">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>基金名称</th>
+                                <th>持有收益</th>
+                                <th>持有天数</th>
+                                <th>年化收益率</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(item, index) in compare">
+                                <th scope="row">{{index+1}}</th>
+                                <td>{{item['name']}}</td>
+                                <td>{{item['earn']}}</td>
+                                <td>{{item['day']}}</td>
+                                <td>{{item['rate']}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.4.4/vue.js"></script>
+        <script>
+            var app = new Vue({
+                el: '#main',
+                data: {
+                    gridColumns: {'name':'基金名称', 'earn':'持有收益','day':'持有天数','rate':'年化收益率'},
+                    // 基金名称
+                    fund_name:'',
+                    // 本金
+                    capital:100,
+                    // 持有单价
+                    hold_price:0,
+                    // 最新净值
+                    now_price:0,
+                    // 持有份额
+                    hold_portion:0,
+                    // 买入日期
+                    buy_date:'2017-09-11',
+                    compare:[]
+                },
+                created:function(){
+                    // 从localstorage读入,放入compare里
+                    if(null!==localStorage.key('compare')){
+                        this.compare = JSON.parse(localStorage.getItem('compare'));
+                    }
+                },
+                watch:{
+                    compare: {
+                        // 变动时写入localstorage
+                        handler: function (val, oldVal) {
+                            localStorage.setItem('compare',JSON.stringify(val));
+                        },
+                        deep: true
+                    }
+                },
+                computed: {
+                    // 年化收益率
+                    earn_rate: function () {
+                        // 持有收益
+                        var all_earn = this.all_earn;
+                        // 投资天数
+                        var days = this.days;
+                        // 年化收益率
+                        var year_rate = ((all_earn/this.capital)/days)*365*100;
+                        return year_rate;
+                    },
+                    // 持有天数
+                    days:function(){
+                        return this.GetDateDiff(this.buy_date,this.get_today_date(),'day');
+                    },
+                    // 持有收益
+                    all_earn:function(){
+                        // 单价差
+                        var earn_unit = this.now_price-this.hold_price;
+                        // 持有收益
+                        return earn_unit*this.hold_portion
+                    }
+                },
+                methods:{
+                    GetDateDiff:function(startTime, endTime, diffType) {
+                        //将xxxx-xx-xx的时间格式，转换为 xxxx/xx/xx的格式 
+                        startTime = startTime.replace(/\-/g, "/");
+                        endTime = endTime.replace(/\-/g, "/");
+
+                        //将计算间隔类性字符转换为小写
+                        diffType = diffType.toLowerCase();1.
+                        var sTime = new Date(startTime);      //开始时间
+                        var eTime = new Date(endTime);  //结束时间
+                        //作为除数的数字
+                        var divNum = 1;
+                        switch (diffType) {
+                            case "second":
+                                divNum = 1000;
+                                break;
+                            case "minute":
+                                divNum = 1000 * 60;
+                                break;
+                            case "hour":
+                                divNum = 1000 * 3600;
+                                break;
+                            case "day":
+                                divNum = 1000 * 3600 * 24;
+                                break;
+                            default:
+                                break;
+                        }
+                        return parseInt((eTime.getTime() - sTime.getTime()) / parseInt(divNum));
+                    },
+                    get_today_date:function(){
+                        var myDate = new Date();
+                        // return `${myDate.getFullYear()}-${myDate.getMonth()+1}-${myDate.getDate()}`;
+                        return myDate.getFullYear()+"-"+(myDate.getMonth()+1)+"-"+myDate.getDate();
+                    },
+                    add_compare:function(){
+                        // 放入到对比数组中
+                        this.compare.push({
+                            'name':this.fund_name,
+                            'earn':this.all_earn,
+                            'day':this.days,
+                            'rate':this.earn_rate
+                        });
+                    }
+                }
+            })
+        </script>
+    </body>
+</html>
