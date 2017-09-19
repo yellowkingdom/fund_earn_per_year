@@ -80,6 +80,7 @@
                                 <th>持有收益</th>
                                 <th>持有天数</th>
                                 <th>年化收益率</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -89,6 +90,7 @@
                                 <td>{{item['earn']}}</td>
                                 <td>{{item['day']}}</td>
                                 <td>{{item['rate']}}</td>
+                                <td @click="del(index)"><span class="glyphicon glyphicon glyphicon-remove" aria-hidden="true"></span></td>
                             </tr>
                         </tbody>
                     </table>
@@ -238,6 +240,9 @@
                             'day':this.days,
                             'rate':this.earn_rate
                         });
+                    },
+                    del:function(index){
+                        this.compare.splice(index,1);
                     }
                 }
             })
