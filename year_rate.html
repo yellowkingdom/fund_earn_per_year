@@ -21,7 +21,7 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="span6 offset1">
+                    <div class="col-xs-6">
                         <div class="input-group">
                             <label for="">基金名称</label>
                             <input class="form-control" placeholder="基金名称" type="text" v-model="fund_name"  >
@@ -34,6 +34,8 @@
                             <label for="">持仓单价</label>
                             <input class="form-control" placeholder="持仓单价" type="number" v-model="hold_price"  >
                         </div>
+                    </div>
+                    <div class="col-xs-6">
                         <div class="input-group">
                             <label for="">最新净值</label>
                             <input class="form-control" placeholder="最新净值" type="number" v-model="now_price"  >
@@ -46,11 +48,19 @@
                             <label for="">购入时间</label>
                             <input class="form-control" placeholder="购入时间" type="date" v-model="buy_date"  >
                         </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12">
                         <div class="input-group">
                             <label for="">年化收益率</label>
                             <input class="form-control" placeholder="年化收益率" readonly type="number" v-model="earn_rate"  >
                             <span class="input-group-addon">%</span>
                         </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12">
                         <div class="input-group">
                             <button class="btn btn-primary" @click="add_compare">对比</button>
                         </div>
@@ -85,7 +95,11 @@
                 </div>
             </div>
         </div>
+        <div class="container">
+            <div id="chart" style="width: 1024px;height:400px;"></div>
+        </div>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.4.4/vue.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/3.7.1/echarts.js"></script>
         <script>
             var app = new Vue({
                 el: '#main',
@@ -103,19 +117,43 @@
                     hold_portion:0,
                     // 买入日期
                     buy_date:'2017-09-11',
-                    compare:[]
+                    compare:[],
+                    myChart:'',
+                    chart_option:{
+                        title: {
+                            text: '年化收益对比'
+                        },
+                        tooltip: {},
+                        legend: {
+                            data:['年化收益率']
+                        },
+                        xAxis: {
+                            // 基金名
+                            data: []
+                        },
+                        yAxis: {},
+                        series: [{
+                            name: '年化收益率',
+                            type: 'bar',
+                            // 年化收益率
+                            data: []
+                        }]
+                    }
                 },
                 created:function(){
                     // 从localstorage读入,放入compare里
                     if(null!==localStorage.key('compare')){
                         this.compare = JSON.parse(localStorage.getItem('compare'));
                     }
+                    this.myChart = echarts.init(document.getElementById('chart'));
+                    this.show_chart();
                 },
                 watch:{
                     compare: {
                         // 变动时写入localstorage
                         handler: function (val, oldVal) {
                             localStorage.setItem('compare',JSON.stringify(val));
+                            this.show_chart();
                         },
                         deep: true
                     }
@@ -172,6 +210,20 @@
                                 break;
                         }
                         return parseInt((eTime.getTime() - sTime.getTime()) / parseInt(divNum));
+                    },
+                    show_chart:function(){
+                        // 改图表
+                        var title = [];
+                        var data = [];
+                        var val = this.compare
+                        for (var index = 0; index < val.length; index++) {
+                            title.push(val[index]['name']);
+                            data.push(val[index]['rate']);
+                        }
+                        this.chart_option.xAxis.data = title;
+                        this.chart_option.series[0]['data'] = data;
+                        console.log(this.chart_option,data,title)
+                        this.myChart.setOption(this.chart_option)
                     },
                     get_today_date:function(){
                         var myDate = new Date();

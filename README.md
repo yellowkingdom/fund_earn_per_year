@@ -1,6 +1,7 @@
 # 使用:
 #### 1. vuejs 2
 #### 2. bootstrap 3
+#### 3. echarts
 
 # 用途
 
